@@ -44,11 +44,11 @@
       input.value = '';
 
       try {
-        const res = await fetch('https://chatbot-backend-jjv0.onrender.com/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message })
-        });
+        const res = await fetch('https://chatbot-backend-jjv0.onrender.com/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message })
+});
 
         const data = await res.json();
         addMessage(data.reply || "Erreur inconnue.", 'bot');

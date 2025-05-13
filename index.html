@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Intranet RH – Collab'IA</title>
+  <title>Métropole Grand Lyon - Espace intranet</title>
   <style>
     :root {
       --primary: #E60028;
@@ -212,8 +212,8 @@ summary {
   <nav>
   <div id="login-screen" style="position: fixed; inset: 0; background: var(--light-gray); display: flex; align-items: center; justify-content: center; z-index: 9999;">
   <form id="login-form" style="background: white; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow); width: 300px;">
-    <h2 style="text-align: center; margin-bottom: 1rem;">Connexion</h2>
-    <input type="email" id="email" placeholder="Email RH" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem; border-radius: var(--radius); border: 1px solid #ccc;" />
+    <h2 style="text-align: center; margin-bottom: 1rem;">Bienvenue sur l'espace intranet</h2>
+    <input type="email" id="email" placeholder="Adresse mail" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem; border-radius: var(--radius); border: 1px solid #ccc;" />
     <input type="password" id="password" placeholder="Mot de passe" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem; border-radius: var(--radius); border: 1px solid #ccc;" />
     <button type="submit" style="width: 100%; padding: 0.5rem; background: var(--primary); color: white; border: none; border-radius: var(--radius); cursor: pointer;">Se connecter</button>
     <div id="login-error" style="color: red; text-align: center; margin-top: 0.5rem;"></div>
@@ -227,8 +227,12 @@ summary {
       <a href="#">Mon dossier</a>
       <a href="#">Aide</a>
     </div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+  <button id="logout-btn" style="background: none; border: none; color: var(--primary); font-weight: bold; cursor: pointer;">Déconnexion</button>
+  <div id="profile-avatar" style="width: 40px; height: 40px; border-radius: 50%; background-size: cover; background-position: center;"></div>
+</div>
   </nav>
-  <header>Collab'IA – Chat RH de la Métropole de Lyon</header>
+  <header>Collab'IA – Le chatbot RH au service des agents de la Métropole Grand Lyon</header>
 <div id="chat-container">
   <!-- 🔥 Ajout : Barre de recherche -->
   <div style="padding: 1rem; background: var(--white); border-bottom: 1px solid #ddd; position: relative; z-index: 1;">
@@ -254,179 +258,203 @@ summary {
   <footer>
     &copy; 2024 Métropole de Lyon – Service des Ressources Humaines. Tous droits réservés.
   </footer>
-  <script>
-    const chat = document.getElementById('chat');
-    const form = document.getElementById('chat-form');
-    const input = document.getElementById('user-input');
-    const fileInput = document.getElementById('file-input');
-    const suggestions = document.querySelectorAll('.suggestions button');
+<script>
+  const chat = document.getElementById('chat');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('user-input');
+  const fileInput = document.getElementById('file-input');
+  const suggestions = document.querySelectorAll('.suggestions button');
+  const searchInput = document.getElementById('search-input');
 
-    const userAvatar = 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png';
-    const botAvatar = 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png';
+  const userAvatar = 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png';
+  const botAvatar = 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png';
 
- function addMessage(content, sender) {
-  const msg = document.createElement('div');
-  msg.className = `message ${sender}`;
+  let currentUser = null;
 
-  const avatar = document.createElement('div');
-  avatar.className = 'avatar';
-  avatar.style.backgroundImage = `url(${sender === 'user' ? userAvatar : botAvatar})`;
+  const loginScreen = document.getElementById('login-screen');
+  const loginForm = document.getElementById('login-form');
+  const loginError = document.getElementById('login-error');
 
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble';
+  function addMessage(content, sender) {
+    const msg = document.createElement('div');
+    msg.className = `message ${sender}`;
 
-  const name = document.createElement('div');
-  name.className = 'name';
-  name.textContent = sender === 'user' ? 'Moi' : "Collab'IA";
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.style.backgroundImage = `url(${sender === 'user' ? userAvatar : botAvatar})`;
 
-  bubble.appendChild(name);
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
 
-  const body = document.createElement('div');
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = sender === 'user' ? 'Moi' : "Collab'IA";
 
-  if (typeof content === 'string') {
-    body.textContent = content;
-  } else if (typeof content === 'object' && content.type === 'rich') {
-    content.elements.forEach(el => {
-      if (el.type === 'text') {
-        const p = document.createElement('p');
-        p.textContent = el.content;
-        body.appendChild(p);
-      } else if (el.type === 'link') {
-        const a = document.createElement('a');
-        a.href = el.url;
-        a.textContent = el.text;
-        a.target = '_blank';
-        a.style.display = 'block';
-        a.style.marginTop = '0.5rem';
-        a.style.color = 'var(--primary)';
-        body.appendChild(a);
-      } else if (el.type === 'file') {
-        const link = document.createElement('a');
-        link.href = el.url;
-        link.textContent = el.text;
-        link.download = '';
-        link.style.display = 'block';
-        link.style.marginTop = '0.5rem';
-        body.appendChild(link);
-      } else if (el.type === 'accordion') {
-        const details = document.createElement('details');
-        const summary = document.createElement('summary');
-        summary.textContent = el.title;
-        const contentDiv = document.createElement('div');
-        contentDiv.textContent = el.content;
-        details.appendChild(summary);
-        details.appendChild(contentDiv);
-        details.style.marginTop = '0.5rem';
-        body.appendChild(details);
-      }
-    });
+    bubble.appendChild(name);
+
+    const body = document.createElement('div');
+
+    if (typeof content === 'string') {
+      body.textContent = content;
+    } else if (typeof content === 'object' && content.type === 'rich') {
+      content.elements.forEach(el => {
+        if (el.type === 'text') {
+          const p = document.createElement('p');
+          p.textContent = el.content;
+          body.appendChild(p);
+        } else if (el.type === 'link') {
+          const a = document.createElement('a');
+          a.href = el.url;
+          a.textContent = el.text;
+          a.target = '_blank';
+          a.style.display = 'block';
+          a.style.marginTop = '0.5rem';
+          a.style.color = 'var(--primary)';
+          body.appendChild(a);
+        } else if (el.type === 'file') {
+          const link = document.createElement('a');
+          link.href = el.url;
+          link.textContent = el.text;
+          link.download = '';
+          link.style.display = 'block';
+          link.style.marginTop = '0.5rem';
+          body.appendChild(link);
+        } else if (el.type === 'accordion') {
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          summary.textContent = el.title;
+          const contentDiv = document.createElement('div');
+          contentDiv.textContent = el.content;
+          details.appendChild(summary);
+          details.appendChild(contentDiv);
+          details.style.marginTop = '0.5rem';
+          body.appendChild(details);
+        }
+      });
+    }
+
+    bubble.appendChild(body);
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
   }
 
-  bubble.appendChild(body);
-  msg.appendChild(avatar);
-  msg.appendChild(bubble);
-  chat.appendChild(msg);
-  chat.scrollTop = chat.scrollHeight;
-}
+  async function loadChatHistory(userId) {
+    try {
+      const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/history/${userId}`);
+      const data = await res.json();
+      data.messages.forEach(m => addMessage(m.text, m.sender));
+    } catch (error) {
+      addMessage("Impossible de charger l'historique.", 'bot');
+    }
+  }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const message = input.value.trim();
-      const file = fileInput.files[0];
-      if (!message && !file) return;
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
 
-      if (message) addMessage(message, 'user');
-      if (file) addMessage(`Fichier joint : ${file.name}`, 'user');
-
-      input.value = '';
-      fileInput.value = '';
-
-      try {
-        const res = await fetch('https://chatbot-backend-jjv0.onrender.com/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, userId: currentUser?.id })
-        });
-        const data = await res.json();
-        addMessage(data.reply || "Réponse non disponible.", 'bot');
-      } catch (error) {
-        addMessage("Erreur de connexion avec le serveur.", 'bot');
-      }
-    });
-
-    suggestions.forEach(button => {
-      button.addEventListener('click', () => {
-        input.value = button.textContent;
-        form.dispatchEvent(new Event('submit'));
+    try {
+      const res = await fetch('https://chatbot-backend-jjv0.onrender.com/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
-    });
-    
-    const searchInput = document.getElementById('search-input'); // 🔥 Ajout
+      const data = await res.json();
 
-// 🔥 Ajout : Fonction de recherche
-searchInput.addEventListener('input', () => {
-  const keyword = searchInput.value.toLowerCase();
-  const messages = chat.querySelectorAll('.bubble');
+      if (res.ok) {
+        currentUser = data.user;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        loginScreen.style.display = 'none';
+        // 🧑‍💼 Avatar selon l'utilisateur connecté
+const avatarEl = document.getElementById('profile-avatar');
+const email = currentUser.email;
 
-  messages.forEach(bubble => {
-    const text = bubble.textContent.toLowerCase();
-    const originalText = bubble.textContent;
-    bubble.innerHTML = originalText.replace(/(<mark>|<\/mark>)/g, ''); // reset
+const avatarMap = {
+  'valentin.calvo@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQE_u1001uG0tg/profile-displayphoto-shrink_800_800/B4EZYaX4oMHUAg-/0/1744199193477?e=1752710400&v=beta&t=nU9iYQmHrkidaKlIJ6pQu-yZcdv85PI4CY8cnV8h3u0',
+  'perrine.moerman@lyon.fr': 'https://writedirection.com/wp-content/uploads/2016/09/blank-profile-picture-973460_960_720.png',
+  'manon.latapie@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQGV56jGw-sOyg/profile-displayphoto-shrink_800_800/B4EZYZO1ILHYAc-/0/1744180041097?e=1752710400&v=beta&t=iwWRkRW5ahL-6I7wm13EXRNKDhEu3zFfLEDY3TyB1f8',
+  'axelle.coatan@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQHYPFWRt2i_aw/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1710609817708?e=1752710400&v=beta&t=EDJImhbcPePfBvJMGY9czYt9KZAOgHFcgMwZp6SvLq0'
+};
 
-    if (keyword && text.includes(keyword)) {
-      const regex = new RegExp(`(${keyword})`, 'gi');
-      bubble.innerHTML = originalText.replace(regex, '<mark>$1</mark>');
+if (avatarMap[email]) {
+  avatarEl.style.backgroundImage = `url(${avatarMap[email]})`;
+}
+        addMessage(`👋 Bonjour ${currentUser.email.split('@')[0]} ! Bienvenue sur le Chat RH personnalisé de la Métropole de Lyon.`, 'bot');
+        loadChatHistory(currentUser.id);
+      } else {
+        loginError.textContent = data.error || "Identifiants incorrects.";
+      }
+    } catch (err) {
+      loginError.textContent = "Erreur de connexion au serveur.";
     }
   });
-});
 
-let currentUser = null;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    const file = fileInput.files[0];
+    if (!message && !file) return;
 
-const loginScreen = document.getElementById('login-screen');
-const loginForm = document.getElementById('login-form');
-const loginError = document.getElementById('login-error');
+    if (message) addMessage(message, 'user');
+    if (file) addMessage(`Fichier joint : ${file.name}`, 'user');
 
-loginForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
+    input.value = '';
+    fileInput.value = '';
 
-  try {
-    const res = await fetch('https://chatbot-backend-jjv0.onrender.com/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-
-    if (res.ok) {
-      currentUser = data.user; // ex: { id, email, service }
-      loginScreen.style.display = 'none';
-      
-      // 🔥 AJOUTE CE QUI SUIT ICI
-      addMessage(`👋 Bonjour ${currentUser.email.split('@')[0]} ! Bienvenue sur le Chat RH personnalisé de la Métropole de Lyon.`, 'bot');
-
-      // Charger l'historique des messages de cet utilisateur
-      loadChatHistory(currentUser.id);
-    } else {
-      loginError.textContent = data.error || "Identifiants incorrects.";
+    try {
+      const res = await fetch('https://chatbot-backend-jjv0.onrender.com/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, userId: currentUser?.id })
+      });
+      const data = await res.json();
+      addMessage(data.reply || "Réponse non disponible.", 'bot');
+    } catch (error) {
+      addMessage("Erreur de connexion avec le serveur.", 'bot');
     }
-  } catch (err) {
-    loginError.textContent = "Erreur de connexion au serveur.";
-  }
-});
+  });
 
-async function loadChatHistory(userId) {
-  try {
-    const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/history/${userId}`);
-    const data = await res.json();
+  suggestions.forEach(button => {
+    button.addEventListener('click', () => {
+      input.value = button.textContent;
+      form.dispatchEvent(new Event('submit'));
+    });
+  });
 
-    data.messages.forEach(m => addMessage(m.text, m.sender));
-  } catch (error) {
-    addMessage("Impossible de charger l'historique.", 'bot');
+  searchInput.addEventListener('input', () => {
+    const keyword = searchInput.value.toLowerCase();
+    const messages = chat.querySelectorAll('.bubble');
+
+    messages.forEach(bubble => {
+      const text = bubble.textContent.toLowerCase();
+      const originalText = bubble.textContent;
+      bubble.innerHTML = originalText.replace(/(<mark>|<\/mark>)/g, '');
+      if (keyword && text.includes(keyword)) {
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        bubble.innerHTML = originalText.replace(regex, '<mark>$1</mark>');
+      }
+    });
+  });
+
+  // 🔁 Restaurer l'utilisateur déjà connecté
+  const savedUser = localStorage.getItem('currentUser');
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    loginScreen.style.display = 'none';
+    addMessage(`👋 Bonjour ${currentUser.email.split('@')[0]} ! Ravi de vous revoir sur le Chat RH.`, 'bot');
+    loadChatHistory(currentUser.id);
   }
-}
-  </script>
-  
+
+  // 🔓 Déconnexion
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('currentUser');
+      location.reload();
+    });
+  }
+</script>
 </body>
 </html>

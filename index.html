@@ -2,22 +2,22 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Chatbot RH – Métropole de Lyon</title>
+  <title>Collab'IA – Chat RH Métropole de Lyon</title>
   <style>
     :root {
       --primary: #E60028;
-      --background: #F5F5F5;
-      --text: #333;
+      --light-gray: #F5F5F5;
+      --dark: #333;
       --white: #ffffff;
-      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       --radius: 12px;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     body {
       margin: 0;
       font-family: "Roboto", Arial, sans-serif;
-      background: var(--background);
-      color: var(--text);
+      background: var(--light-gray);
+      color: var(--dark);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -37,8 +37,8 @@
     #chat-container {
       background: var(--white);
       width: 100%;
-      max-width: 600px;
-      height: 500px;
+      max-width: 700px;
+      height: 600px;
       display: flex;
       flex-direction: column;
       border-radius: var(--radius);
@@ -50,28 +50,58 @@
       flex: 1;
       padding: 1rem;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
     .message {
-      margin: 0.5rem 0;
-      line-height: 1.4;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
     }
 
-    .user {
-      text-align: right;
-      color: var(--primary);
+    .message.bot {
+      flex-direction: row;
     }
 
-    .bot {
-      text-align: left;
-      color: var(--text);
+    .message.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+    }
+
+    .bubble {
+      background: var(--light-gray);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      max-width: 70%;
+      position: relative;
+    }
+
+    .user .bubble {
+      background: #E60028;
+      color: white;
+    }
+
+    .name {
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 0.25rem;
     }
 
     form {
       display: flex;
       padding: 1rem;
       border-top: 1px solid #ddd;
-      background: var(--background);
+      background: var(--white);
     }
 
     input {
@@ -100,14 +130,12 @@
   </style>
 </head>
 <body>
-  <header>
-    Chatbot RH – Métropole de Lyon
-  </header>
+  <header>Collab'IA – Chat RH Métropole de Lyon</header>
 
   <div id="chat-container">
     <div id="chat"></div>
     <form id="chat-form">
-      <input type="text" id="user-input" placeholder="Posez une question RH..." required />
+      <input type="text" id="user-input" placeholder="Posez votre question RH..." required />
       <button type="submit">Envoyer</button>
     </form>
   </div>
@@ -117,10 +145,32 @@
     const form = document.getElementById('chat-form');
     const input = document.getElementById('user-input');
 
+    const userAvatar = 'https://cdn-icons-png.flaticon.com/512/1077/1077063.png';
+    const botAvatar = 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png';
+
     function addMessage(text, sender) {
       const msg = document.createElement('div');
       msg.className = `message ${sender}`;
-      msg.textContent = text;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.style.backgroundImage = `url(${sender === 'user' ? userAvatar : botAvatar})`;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = sender === 'user' ? 'Moi' : "Collab'IA";
+
+      const content = document.createElement('div');
+      content.textContent = text;
+
+      bubble.appendChild(name);
+      bubble.appendChild(content);
+      msg.appendChild(avatar);
+      msg.appendChild(bubble);
+
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }

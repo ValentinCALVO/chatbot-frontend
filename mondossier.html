@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mon dossier – Métropole Grand Lyon</title>
+  <style>
+    :root {
+      --primary: #E60028;
+      --light-gray: #F5F5F5;
+      --dark: #333;
+      --white: #ffffff;
+      --radius: 12px;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Roboto", Arial, sans-serif;
+      background: var(--light-gray);
+      color: var(--dark);
+      display: flex;
+      flex-direction: column;
+      padding-top: 90px;
+    }
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 2rem;
+      z-index: 10;
+    }
+    nav img {
+      height: 40px;
+    }
+    .menu {
+      display: flex;
+      gap: 2rem;
+    }
+    .menu a {
+      text-decoration: none;
+      color: var(--dark);
+      font-weight: 500;
+      position: relative;
+    }
+    .menu a.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -4px;
+      height: 2px;
+      width: 100%;
+      background: var(--primary);
+    }
+    .dashboard {
+      display: flex;
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 1200px;
+      margin-inline: auto;
+    }
+    .sidebar {
+      width: 250px;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1rem;
+      margin-right: 2rem;
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+    .sidebar button {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      border: none;
+      background: var(--light-gray);
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-align: left;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .sidebar button.active {
+      background: var(--primary);
+      color: white;
+    }
+    .content {
+      flex: 1;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+    }
+    .section {
+      display: none;
+    }
+    .section.active {
+      display: block;
+    }
+    h2 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+    footer {
+      text-align: center;
+      margin: 2rem auto;
+      font-size: 0.9rem;
+      color: #666;
+    }
+    textarea, input[type="file"] {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border-radius: var(--radius);
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: white;
+      border: none;
+      margin-top: 0.5rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <img src="https://upload.wikimedia.org/wikipedia/fr/b/b8/Logo_M%C3%A9tropole_Lyon_-_2022.svg" alt="Logo Métropole de Lyon">
+    <div class="menu">
+      <a href="index.html">Accueil</a>
+      <a href="#">Offres d'emploi</a>
+      <a href="index.html#chat-container">Chat RH</a>
+      <a href="mon-dossier.html" class="active">Mon dossier</a>
+      <a href="#">Aide</a>
+    </div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <button id="logout-btn" style="background: none; border: none; color: var(--primary); font-weight: bold; cursor: pointer;">Déconnexion</button>
+      <div id="profile-avatar" style="width: 40px; height: 40px; border-radius: 50%; background-size: cover; background-position: center;"></div>
+    </div>
+  </nav>
+  <!-- Le reste du contenu sera ajouté dans le bloc suivant -->
+
+  <div class="dashboard">
+    <div class="sidebar">
+      <button class="tab-btn active" data-tab="1">📄 Candidatures</button>
+      <button class="tab-btn" data-tab="2">🧾 Mon CV / Profil</button>
+      <button class="tab-btn" data-tab="7">📥 Pièces justificatives</button>
+    </div>
+    <div class="content">
+      <div class="section active" id="tab-1">
+        <h2>📄 Mes candidatures internes</h2>
+        <ul id="candidature-list">
+          <li>Chargement en cours...</li>
+        </ul>
+      </div>
+      <div class="section" id="tab-2">
+        <h2>🧾 Mon CV / Mon profil professionnel</h2>
+        <form id="cv-form">
+          <label><strong>Compétences</strong></label>
+          <textarea id="cv-competences-input"></textarea>
+          <label><strong>Expériences</strong></label>
+          <textarea id="cv-experiences-input"></textarea>
+          <label><strong>Formations</strong></label>
+          <textarea id="cv-formations-input"></textarea>
+          <button type="submit">💾 Enregistrer le CV</button>
+        </form>
+        <h3>📄 Aperçu enregistré</h3>
+        <div id="cv-container">
+          <p><strong>Compétences :</strong> <span id="cv-competences">...</span></p>
+          <p><strong>Expériences :</strong> <span id="cv-experiences">...</span></p>
+          <p><strong>Formations :</strong> <span id="cv-formations">...</span></p>
+        </div>
+        <button onclick="generatePDF()">📥 Télécharger le CV en PDF</button>
+      </div>
+      <div class="section" id="tab-7">
+        <h2>📥 Dépôt de pièces justificatives</h2>
+        <form id="upload-form">
+          <input type="file" id="file-input" required />
+          <button type="submit">📤 Ajouter</button>
+        </form>
+        <ul id="document-list">
+          <li>Chargement...</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer>&copy; 2024 Métropole de Lyon – Service RH. Tous droits réservés.</footer>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const sections = document.querySelectorAll('.section');
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        sections.forEach(sec => sec.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) window.location.href = 'index.html';
+    const avatarMap = {
+      'valentin.calvo@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQE_u1001uG0tg/profile-displayphoto-shrink_800_800/B4EZYaX4oMHUAg-/0/1744199193477',
+      'manon.latapie@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQGV56jGw-sOyg/profile-displayphoto-shrink_800_800/B4EZYZO1ILHYAc-/0/1744180041097',
+      'axelle.coatan@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQHYPFWRt2i_aw/profile-displayphoto-shrink_800_800/0/1710609817708',
+      'perrine.moerman@lyon.fr': 'https://writedirection.com/wp-content/uploads/2016/09/blank-profile-picture-973460_960_720.png'
+    };
+    const avatar = document.getElementById('profile-avatar');
+    if (avatarMap[currentUser.email]) {
+      avatar.style.backgroundImage = `url(${avatarMap[currentUser.email]})`;
+    }
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.removeItem('currentUser');
+      window.location.href = 'index.html';
+    });
+    function displayCV(cv) {
+      document.getElementById('cv-competences').textContent = (cv.competences || []).join(', ');
+      document.getElementById('cv-experiences').textContent = (cv.experiences || []).join(', ');
+      document.getElementById('cv-formations').textContent = (cv.formations || []).join(', ');
+    }
+    function fillCVInputs(cv) {
+      document.getElementById('cv-competences-input').value = (cv.competences || []).join(', ');
+      document.getElementById('cv-experiences-input').value = (cv.experiences || []).join(', ');
+      document.getElementById('cv-formations-input').value = (cv.formations || []).join(', ');
+    }
+    async function loadCV() {
+      const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/cv/${currentUser.id}`);
+      const cv = await res.json();
+      displayCV(cv);
+      fillCVInputs(cv);
+    }
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/cv/${currentUser.id}`);
+      const cv = await res.json();
+      doc.text("CV standardisé – Métropole de Lyon", 20, 20);
+      doc.text(`Nom : ${currentUser.email.split('@')[0]}`, 20, 30);
+      doc.text("Service RH : " + currentUser.service, 20, 40);
+      doc.text("Compétences :", 20, 50);
+      (cv.competences || []).forEach((c, i) => doc.text("- " + c, 25, 60 + i * 10));
+      const offsetExp = 60 + (cv.competences?.length || 0) * 10 + 10;
+      doc.text("Expériences :", 20, offsetExp);
+      (cv.experiences || []).forEach((e, i) => doc.text("- " + e, 25, offsetExp + 10 + i * 10));
+      const offsetForm = offsetExp + (cv.experiences?.length || 0) * 10 + 20;
+      doc.text("Formations :", 20, offsetForm);
+      (cv.formations || []).forEach((f, i) => doc.text("- " + f, 25, offsetForm + 10 + i * 10));
+      doc.save("CV-Metropole.pdf");
+    }
+    document.getElementById('cv-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const cvData = {
+        competences: document.getElementById('cv-competences-input').value.split(',').map(c => c.trim()),
+        experiences: document.getElementById('cv-experiences-input').value.split(',').map(e => e.trim()),
+        formations: document.getElementById('cv-formations-input').value.split(',').map(f => f.trim())
+      };
+      const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/cv/${currentUser.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cvData)
+      });
+      if (res.ok) {
+        displayCV(cvData);
+        alert("✅ CV enregistré !");
+      }
+    });
+    async function loadCandidatures() {
+      const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/applications/${currentUser.id}`);
+      const candidatures = await res.json();
+      const list = document.getElementById('candidature-list');
+      list.innerHTML = "";
+      if (candidatures.length === 0) {
+        list.innerHTML = "<li>Aucune candidature.</li>";
+      }
+      candidatures.forEach(app => {
+        const li = document.createElement('li');
+        li.innerHTML = `${app.poste} – <strong>${app.statut}</strong>`;
+        list.appendChild(li);
+      });
+    }
+    async function loadDocuments() {
+      const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/documents`);
+      const docs = await res.json();
+      const userDocs = docs.filter(d => d.userId === currentUser.id);
+      const list = document.getElementById('document-list');
+      list.innerHTML = "";
+      if (userDocs.length === 0) {
+        list.innerHTML = "<li>Aucun document.</li>";
+      }
+      userDocs.forEach(doc => {
+        const li = document.createElement('li');
+        li.textContent = `${doc.filename} – ${new Date(doc.uploadedAt).toLocaleDateString()}`;
+        list.appendChild(li);
+      });
+    }
+    document.getElementById('upload-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('file-input').files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("userId", currentUser.id);
+      const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/upload`, {
+        method: "POST",
+        body: formData
+      });
+      if (res.ok) {
+        alert("✅ Fichier envoyé !");
+        loadDocuments();
+        document.getElementById('file-input').value = '';
+      }
+    });
+    if (currentUser) {
+      loadCV();
+      loadCandidatures();
+      loadDocuments();
+    }
+  </script>
+</body>
+</html>

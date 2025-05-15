@@ -255,9 +255,62 @@
       height: 250px;
     }
   }
+  .popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.popup-content {
+  background: var(--white);
+  padding: 2rem;
+  border-radius: var(--radius);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+.popup-content h2 {
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+.popup-content img {
+  max-width: 100%;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.popup-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--dark);
+  cursor: pointer;
+}
   </style>
 </head>
 <body>
+<div id="popup" class="popup-overlay">
+  <div class="popup-content">
+    <button class="popup-close">&times;</button>
+    <h2>Événement à la une</h2>
+    <img src="https://raw.githubusercontent.com/ValentinCALVO/chatbot-frontend/refs/heads/main/popup.png" alt="Popup" />
+  </div>
+</div>
+
   <nav>
     <img src="https://upload.wikimedia.org/wikipedia/fr/b/b8/Logo_M%C3%A9tropole_Lyon_-_2022.svg" alt="Logo Métropole de Lyon">
     <div class="menu">
@@ -377,6 +430,17 @@
 
   window.addEventListener('resize', updateCarousel);
   window.addEventListener('load', updateCarousel);
+  
+  const popup = document.getElementById('popup');
+  const closeBtn = document.querySelector('.popup-close');
+
+  window.addEventListener('load', () => {
+    popup.style.display = 'flex';
+  });
+
+  closeBtn.addEventListener('click', () => {
+    popup.style.display = 'none';
+  });
 </script>
 
 </body>

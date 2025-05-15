@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -653,19 +654,46 @@ async function showAppointmentSlots() {
     fileInput.value = '';
 
     try {
-      const res = await fetch('https://chatbot-backend-jjv0.onrender.com/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, userId: currentUser?.id })
-      });
-      const data = await res.json();
-      addMessage(data.reply || "Réponse non disponible.", 'bot');
-      if ((data.reply || '').includes("[EN ATTENTE DE CHARGEMENT]")) {
-  showAppointmentSlots();
+  // Affiche un message de chargement temporaire
+  const loadingMessageId = Date.now();
+  const loadingElement = document.createElement('div');
+  loadingElement.id = `loading-${loadingMessageId}`;
+  loadingElement.className = 'message bot';
+  loadingElement.innerHTML = `
+    <div class="avatar" style="background-image: url(${botAvatar})"></div>
+    <div class="bubble"><div class="name">Collab'IA</div><p>⏳ Je réfléchis à votre question...</p></div>
+  `;
+  chat.appendChild(loadingElement);
+  chat.scrollTop = chat.scrollHeight;
+
+  // Envoi de la requête
+  const res = await fetch('https://chatbot-backend-jjv0.onrender.com/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, userId: currentUser?.id })
+  });
+
+  if (!res.ok) throw new Error("Réponse non OK");
+
+  const data = await res.json();
+  if (!data || !data.reply) throw new Error("Réponse vide");
+
+  // Supprime le message de chargement
+  document.getElementById(`loading-${loadingMessageId}`)?.remove();
+
+  // Affiche la vraie réponse
+  addMessage(data.reply, 'bot');
+
+  if (data.reply.includes("[EN ATTENTE DE CHARGEMENT]")) {
+    showAppointmentSlots();
+  }
+
+} catch (error) {
+  console.error("Erreur avec le backend :", error);
+  // Supprime aussi le message de chargement si erreur
+  document.getElementById(`loading-${loadingMessageId}`)?.remove();
+  addMessage("❌ Erreur de connexion avec le serveur (peut-être un démarrage lent ? Veuillez réessayer dans quelques secondes).", 'bot');
 }
-    } catch (error) {
-      addMessage("Erreur de connexion avec le serveur.", 'bot');
-    }
   });
   
  async function bookSlot(slot) {
@@ -712,6 +740,11 @@ async function showAppointmentSlots() {
       }
     });
   });
+  
+  // Ping de réveil pour Render (évite le cold start lent)
+fetch('https://chatbot-backend-jjv0.onrender.com')
+  .then(() => console.log("✅ Backend réveillé"))
+  .catch(() => console.warn("⚠️ Échec du ping de réveil"));
 
   const savedUser = localStorage.getItem('currentUser');
   if (savedUser) {

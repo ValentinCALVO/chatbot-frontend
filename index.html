@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -74,7 +75,8 @@
       background: var(--white);
       width: 100%;
       max-width: 700px;
-      height: 600px;
+     height: 600px;
+  transition: all 0.3s ease;
       display: flex;
       flex-direction: column;
       border-radius: var(--radius);
@@ -206,6 +208,86 @@ summary {
   font-weight: bold;
   cursor: pointer;
 }
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.badge-item {
+  background: #eee;
+  border-radius: 12px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  animation: fadeInScale 0.3s ease-out;
+}
+.bubble.special-welcome {
+  background: #ffe8e8;
+  color: #b30000;
+  border: 2px solid #e60028;
+  font-weight: bold;
+  animation: bounceIn 0.5s ease;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  background: red;
+  top: 0;
+  animation: confettiFall 2s linear forwards;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 50%;
+}
+.bubble.badge-announcement {
+  background: linear-gradient(135deg, #ffe8e8, #fff0f5);
+  color: #b30000;
+  border: 2px solid #e60028;
+  font-weight: bold;
+  animation: bounceIn 0.5s ease;
+  box-shadow: 0 0 12px rgba(230, 0, 40, 0.4);
+}
+.appointment-btn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.appointment-btn:hover {
+  background-color: #c50022;
+}
+#chat-container.expanded {
+  max-width: 95%;
+  height: 80vh;
+  transition: all 0.3s ease;
+}
   </style>
 </head>
 <body>
@@ -249,16 +331,23 @@ summary {
     <button>Que mettre dans ma lettre de motivation ?</button>
   </div>
   
-  <form id="chat-form">
-    <div class="input-group">
-      <input type="text" id="user-input" placeholder="Posez votre question RH..." required />
-      <button type="submit">Envoyer</button>
-    </div>
-    <input type="file" id="file-input" />
-  </form>
+ <form id="chat-form">
+  <div class="input-group">
+    <input type="text" id="user-input" placeholder="Posez votre question RH..." required />
+    <button type="submit">Envoyer</button>
+  </div>
+  <input type="file" id="file-input" />
+  <button id="resize-btn" type="button" style="margin-top: 0.5rem; background: #ccc; color: #333; border: none; border-radius: 8px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem;">
+    🔍 Agrandir le chat
+  </button>
+</form>
 </div>
+<section id="badge-section" style="margin-top: 2rem; width: 100%; max-width: 700px; background: white; padding: 1rem; border-radius: var(--radius); box-shadow: var(--shadow);">
+  <h3 style="margin-bottom: 1rem;">🎖️ Mes badges</h3>
+  <div id="badge-list" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+</section>
   <footer>
-    &copy; 2024 Métropole de Lyon – Service des Ressources Humaines. Tous droits réservés.
+    &copy; 2025 Métropole de Lyon – Service des Ressources Humaines. Tous droits réservés à Valentin CALVO.
   </footer>
 <script>
   const chat = document.getElementById('chat');
@@ -272,10 +361,39 @@ summary {
   const botAvatar = 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png';
 
   let currentUser = null;
+  let userMessageCount = 0;
+  const unlockedBadges = new Set();
 
   const loginScreen = document.getElementById('login-screen');
   const loginForm = document.getElementById('login-form');
   const loginError = document.getElementById('login-error');
+
+  function launchConfetti(count = 30) {
+    for (let i = 0; i < count; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = `${Math.random() * 100}vw`;
+      confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+      confetti.style.animationDuration = `${Math.random() * 1 + 1.5}s`;
+      confetti.style.transform = `scale(${Math.random() * 0.6 + 0.4})`;
+      document.body.appendChild(confetti);
+      setTimeout(() => confetti.remove(), 2500);
+    }
+  }
+
+  function celebrateBadges(newBadges) {
+    if (!newBadges.length) return;
+    const badgeText = newBadges.join(' ');
+   addMessage({
+  type: 'rich',
+  className: 'badge-announcement',
+  elements: [
+    { type: 'text', content: `🎉 Bravo ! Vous avez débloqué ${newBadges.length > 1 ? 'plusieurs badges' : 'un badge'} :` },
+    { type: 'text', content: badgeText }
+  ]
+}, 'bot');
+    launchConfetti(40);
+  }
 
   function addMessage(content, sender) {
     const msg = document.createElement('div');
@@ -286,7 +404,10 @@ summary {
     avatar.style.backgroundImage = `url(${sender === 'user' ? userAvatar : botAvatar})`;
 
     const bubble = document.createElement('div');
-    bubble.className = 'bubble';
+bubble.className = 'bubble';
+if (typeof content === 'object' && content.className) {
+  bubble.classList.add(content.className);
+}
 
     const name = document.createElement('div');
     name.className = 'name';
@@ -342,6 +463,23 @@ summary {
     chat.scrollTop = chat.scrollHeight;
   }
 
+  function addBadge(badgeText, newlyUnlocked = []) {
+    if (unlockedBadges.has(badgeText)) return;
+    const badgeList = document.getElementById('badge-list');
+    const badge = document.createElement('span');
+    badge.className = 'badge-item';
+    badge.textContent = badgeText;
+    badgeList.appendChild(badge);
+    unlockedBadges.add(badgeText);
+    newlyUnlocked.push(badgeText);
+    localStorage.setItem('userBadges', JSON.stringify(Array.from(unlockedBadges)));
+  }
+
+  function restoreBadges() {
+    const saved = JSON.parse(localStorage.getItem('userBadges') || '[]');
+    saved.forEach(badge => addBadge(badge));
+  }
+
   async function loadChatHistory(userId) {
     try {
       const res = await fetch(`https://chatbot-backend-jjv0.onrender.com/history/${userId}`);
@@ -369,20 +507,22 @@ summary {
         currentUser = data.user;
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         loginScreen.style.display = 'none';
-        // 🧑‍💼 Avatar selon l'utilisateur connecté
-const avatarEl = document.getElementById('profile-avatar');
-const email = currentUser.email;
 
-const avatarMap = {
-  'valentin.calvo@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQE_u1001uG0tg/profile-displayphoto-shrink_800_800/B4EZYaX4oMHUAg-/0/1744199193477?e=1752710400&v=beta&t=nU9iYQmHrkidaKlIJ6pQu-yZcdv85PI4CY8cnV8h3u0',
-  'perrine.moerman@lyon.fr': 'https://writedirection.com/wp-content/uploads/2016/09/blank-profile-picture-973460_960_720.png',
-  'manon.latapie@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQGV56jGw-sOyg/profile-displayphoto-shrink_800_800/B4EZYZO1ILHYAc-/0/1744180041097?e=1752710400&v=beta&t=iwWRkRW5ahL-6I7wm13EXRNKDhEu3zFfLEDY3TyB1f8',
-  'axelle.coatan@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQHYPFWRt2i_aw/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1710609817708?e=1752710400&v=beta&t=EDJImhbcPePfBvJMGY9czYt9KZAOgHFcgMwZp6SvLq0'
-};
+        const avatarEl = document.getElementById('profile-avatar');
+        const email = currentUser.email;
 
-if (avatarMap[email]) {
-  avatarEl.style.backgroundImage = `url(${avatarMap[email]})`;
-}
+        const avatarMap = {
+          'valentin.calvo@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQE_u1001uG0tg/profile-displayphoto-shrink_800_800/B4EZYaX4oMHUAg-/0/1744199193477?e=1752710400&v=beta&t=nU9iYQmHrkidaKlIJ6pQu-yZcdv85PI4CY8cnV8h3u0',
+          'perrine.moerman@lyon.fr': 'https://writedirection.com/wp-content/uploads/2016/09/blank-profile-picture-973460_960_720.png',
+          'manon.latapie@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQGV56jGw-sOyg/profile-displayphoto-shrink_800_800/B4EZYZO1ILHYAc-/0/1744180041097?e=1752710400&v=beta&t=iwWRkRW5ahL-6I7wm13EXRNKDhEu3zFfLEDY3TyB1f8',
+          'axelle.coatan@lyon.fr': 'https://media.licdn.com/dms/image/v2/D4E03AQHYPFWRt2i_aw/profile-displayphoto-shrink_800_800/0/1710609817708?e=1752710400&v=beta&t=EDJImhbcPePfBvJMGY9czYt9KZAOgHFcgMwZp6SvLq0'
+        };
+
+        if (avatarMap[email]) {
+          avatarEl.style.backgroundImage = `url(${avatarMap[email]})`;
+        }
+
+        restoreBadges();
         addMessage(`👋 Bonjour ${currentUser.email.split('@')[0]} ! Bienvenue sur le Chat RH personnalisé de la Métropole de Lyon.`, 'bot');
         loadChatHistory(currentUser.id);
       } else {
@@ -392,6 +532,73 @@ if (avatarMap[email]) {
       loginError.textContent = "Erreur de connexion au serveur.";
     }
   });
+  
+  function addAppointmentMessage(slots) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'message bot';
+  wrapper.style.marginTop = '0.5rem';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.style.backgroundImage = `url(${botAvatar})`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  const name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = "Collab'IA";
+  bubble.appendChild(name);
+
+  const label = document.createElement('p');
+  label.textContent = "📅 Créneaux disponibles :";
+  bubble.appendChild(label);
+
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.display = 'flex';
+  buttonContainer.style.flexWrap = 'wrap';
+  buttonContainer.style.gap = '0.5rem';
+  buttonContainer.style.marginTop = '0.5rem';
+
+  slots.forEach(slot => {
+    const date = new Date(slot);
+    const label = date.toLocaleString('fr-FR', {
+      weekday: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+      day: 'numeric',
+      month: 'long'
+    });
+
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.className = 'appointment-btn';
+    btn.addEventListener('click', () => bookSlot(slot));
+    buttonContainer.appendChild(btn);
+  });
+
+  bubble.appendChild(buttonContainer);
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  chat.appendChild(wrapper);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function showAppointmentSlots() {
+  try {
+    const res = await fetch('https://chatbot-backend-jjv0.onrender.com/appointments/slots');
+    const data = await res.json();
+
+    if (data.slots.length === 0) {
+      addMessage("Aucun créneau disponible actuellement.", 'bot');
+    } else {
+      addAppointmentMessage(data.slots);
+    }
+  } catch (error) {
+    addMessage("Erreur lors du chargement des créneaux.", 'bot');
+  }
+}
+
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -399,8 +606,46 @@ if (avatarMap[email]) {
     const file = fileInput.files[0];
     if (!message && !file) return;
 
-    if (message) addMessage(message, 'user');
+    let newlyUnlocked = [];
+
+    if (message) {
+      addMessage(message, 'user');
+      userMessageCount++;
+    }
+
     if (file) addMessage(`Fichier joint : ${file.name}`, 'user');
+
+    const msg = message.toLowerCase();
+
+    // Ajout des badges groupés
+    if (msg.includes("cv")) addBadge("📄 Expert(e) CV", newlyUnlocked);
+    if (msg.includes("entretien")) addBadge("🗣️ Pro des entretiens", newlyUnlocked);
+    if (msg.includes("lettre de motivation") || msg.includes("motivation")) addBadge("✍️ Motivée !", newlyUnlocked);
+    if (msg.includes("mobilité") || msg.includes("évolution") || msg.includes("promotion")) addBadge("🧠 Stratégique", newlyUnlocked);
+    if (msg.includes("planning") || msg.includes("agenda") || msg.includes("organiser")) addBadge("📚 Organisé(e)", newlyUnlocked);
+    if (msg.includes("formation")) addBadge("🎓 Apprenant(e)", newlyUnlocked);
+    if (msg.includes("carrière") || msg.includes("avenir")) addBadge("💼 Ambitieux(se)", newlyUnlocked);
+    if (msg.includes("poste") || msg.includes("offre d'emploi") || msg.includes("recrutement")) addBadge("🔍 En veille RH", newlyUnlocked);
+    if (msg.includes("congés") || msg.includes("absence") || msg.includes("statut")) addBadge("⚖️ Connaisseur(euse) des RH", newlyUnlocked);
+    if (msg.includes("règlement") || msg.includes("guide")) addBadge("💡 Curieux(se) RH", newlyUnlocked);
+    if (msg.includes("pointage") || msg.includes("heures")) addBadge("🕓 Pointeur(euse) Pro", newlyUnlocked);
+    if (msg.includes("syndicat") || msg.includes("chsct")) addBadge("💬 Dialogue Social", newlyUnlocked);
+    if (msg.includes("merci")) addBadge("🙏 Courtois(e)", newlyUnlocked);
+    if (msg.includes("ensemble") || msg.includes("équipe")) addBadge("🤝 Collaboratif(ve)", newlyUnlocked);
+    if (msg.includes("aider") || msg.includes("entraide")) addBadge("🆘 Solidaire", newlyUnlocked);
+    if (msg.includes("!") || msg.includes("?") || msg.length > 150 || msg.split(' ').length > 25) addBadge("💬 Expressif(ve)", newlyUnlocked);
+    if (userMessageCount >= 10) addBadge("🎖️ Explorateur(trice)", newlyUnlocked);
+    if (fileInput.files.length > 0) addBadge("🧪 Testeur(se)", newlyUnlocked);
+    if (sessionStorage.getItem("visitedOnce") === "true") addBadge("🔁 Fidèle", newlyUnlocked);
+    else sessionStorage.setItem("visitedOnce", "true");
+    if (userMessageCount >= 30) addBadge("💬 Bavard(e)", newlyUnlocked);
+    if (msg.includes("abracadabra") || msg.includes("formule magique")) addBadge("🧙 Magicien(ne) RH", newlyUnlocked);
+    if (msg.includes("super") && msg.includes("agent")) addBadge("🦸 Super Agent", newlyUnlocked);
+    if (msg.includes("suggestion") || msg.includes("idée")) addBadge("🐱 Curieux(se) Chatbot", newlyUnlocked);
+    if (unlockedBadges.size >= 5) addBadge("🧩 Débloqueur", newlyUnlocked);
+
+    // 🎉 Afficher message spécial si des badges ont été débloqués
+    if (newlyUnlocked.length > 0) celebrateBadges(newlyUnlocked);
 
     input.value = '';
     fileInput.value = '';
@@ -413,10 +658,36 @@ if (avatarMap[email]) {
       });
       const data = await res.json();
       addMessage(data.reply || "Réponse non disponible.", 'bot');
+      if ((data.reply || '').includes("[EN ATTENTE DE CHARGEMENT]")) {
+  showAppointmentSlots();
+}
     } catch (error) {
       addMessage("Erreur de connexion avec le serveur.", 'bot');
     }
   });
+  
+ async function bookSlot(slot) {
+  try {
+    const res = await fetch('https://chatbot-backend-jjv0.onrender.com/appointments/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id, slot })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      addMessage(`✅ Votre rendez-vous a été réservé pour le ${new Date(slot).toLocaleDateString('fr-FR')} ${new Date(slot).toLocaleTimeString('fr-FR')}.`, 'bot');
+      addBadge("📅 Prévoyant(e)");
+      celebrateBadges(["📅 Prévoyant(e)"]);
+    } else {
+      addMessage(`❌ Échec : ${data.error || "Créneau non disponible."}`, 'bot');
+    }
+  } catch (error) {
+    console.error("Erreur technique :", error); // log utile pour debug
+    addMessage("❌ Erreur technique lors de la réservation du rendez-vous.", 'bot');
+  }
+}
 
   suggestions.forEach(button => {
     button.addEventListener('click', () => {
@@ -440,23 +711,31 @@ if (avatarMap[email]) {
     });
   });
 
-  // 🔁 Restaurer l'utilisateur déjà connecté
   const savedUser = localStorage.getItem('currentUser');
   if (savedUser) {
     currentUser = JSON.parse(savedUser);
     loginScreen.style.display = 'none';
+    restoreBadges();
     addMessage(`👋 Bonjour ${currentUser.email.split('@')[0]} ! Ravi de vous revoir sur le Chat RH.`, 'bot');
     loadChatHistory(currentUser.id);
   }
 
-  // 🔓 Déconnexion
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('userBadges');
       location.reload();
     });
   }
+  const resizeBtn = document.getElementById('resize-btn');
+const chatContainer = document.getElementById('chat-container');
+
+resizeBtn.addEventListener('click', () => {
+  chatContainer.classList.toggle('expanded');
+  const isExpanded = chatContainer.classList.contains('expanded');
+  resizeBtn.textContent = isExpanded ? '🗕 Réduire le chat' : '🔍 Agrandir le chat';
+});
 </script>
 </body>
 </html>
